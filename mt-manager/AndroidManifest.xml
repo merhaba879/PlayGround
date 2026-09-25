@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.mt.manager"
+    android:versionCode="5"
+    android:versionName="3.2">
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <application android:label="MT Manager Clone" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="true">
+        <activity android:name=".MainActivity" android:exported="true" android:label="MT Manager Clone">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".TextEditorActivity" android:exported="false" android:label="Metin Düzenleyici" />
+        <activity android:name=".ZipViewerActivity" android:exported="false" android:label="Arşiv" />
+        <activity android:name=".ApkEditorActivity" android:exported="false" android:label="APK Düzenleyici" />
+    </application>
+</manifest>
