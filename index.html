@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:,">
+<title>Savaş Alanı MINI V2 — PUBG tarzı (3D Mobil)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0b1622; font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif; color:#fff; touch-action:none; overscroll-behavior:none; }
+  #game { position:fixed; inset:0; width:100%; height:100%; display:block; background:#87b5d6; }
+  #hud { position:fixed; top:0; left:0; right:0; display:flex; gap:6px; align-items:center; justify-content:center; flex-wrap:wrap; padding:calc(8px + env(safe-area-inset-top)) 140px 8px 8px; pointer-events:none; z-index:5; }
+  .pill { background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:700; white-space:nowrap; backdrop-filter:blur(4px); }
+  #hpbar,#stbar { width:80px; height:8px; background:#333; border-radius:99px; overflow:hidden; display:inline-block; vertical-align:middle; margin-left:6px; }
+  #hpfill { height:100%; width:100%; background:linear-gradient(90deg,#22c55e,#4ade80); transition:width .2s; }
+  #stfill { height:100%; width:100%; background:linear-gradient(90deg,#38bdf8,#818cf8); transition:width .2s; }
+  #menu { position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.78) 100%); padding:20px; }
+  #card { width:min(520px,94vw); max-height:92vh; overflow:auto; background:rgba(12,20,32,.94); border:1px solid rgba(255,255,255,.15); border-radius:20px; padding:26px 22px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  #card h1 { font-size:30px; letter-spacing:.5px; margin-bottom:4px; }
+  #card h1 span { color:#fbbf24; }
+  #card p { font-size:14px; opacity:.88; line-height:1.5; margin:10px 0; }
+  .badge { display:inline-block; font-size:11px; font-weight:800; letter-spacing:1px; background:#f59e0b; color:#111; border-radius:999px; padding:4px 10px; margin-bottom:8px; }
+  #btnStart { display:block; width:100%; margin-top:14px; padding:15px; font-size:18px; font-weight:900; border:none; border-radius:14px; background:linear-gradient(180deg,#fbbf24,#f59e0b); color:#1a1005; cursor:pointer; }
+  #btnStart:active { transform:scale(.98); }
+  #btnHow { display:block; width:100%; margin-top:10px; padding:11px; font-size:14px; font-weight:700; border-radius:12px; border:1px solid rgba(255,255,255,.25); background:transparent; color:#fff; cursor:pointer; }
+  #how { display:none; text-align:left; font-size:13px; background:rgba(255,255,255,.07); border-radius:12px; padding:12px; margin-top:12px; line-height:1.65; }
+  #over { position:fixed; inset:0; z-index:11; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.65); padding:20px; }
+  #overCard { width:min(420px,92vw); background:#101c2e; border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:24px; text-align:center; }
+  #btnAgain { margin-top:14px; width:100%; padding:13px; border:none; border-radius:12px; font-weight:900; font-size:16px; background:#22c55e; color:#04140a; cursor:pointer; }
+  #stick { position:fixed; left:18px; bottom:calc(18px + env(safe-area-inset-bottom)); width:124px; height:124px; border-radius:50%; background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.25); z-index:6; display:none; }
+  #knob { position:absolute; left:50%; top:50%; width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,.45); transform:translate(-50%,-50%); }
+  .tbtn { position:fixed; z-index:6; display:none; border-radius:50%; border:2px solid rgba(255,255,255,.45); color:#fff; font-weight:900; }
+  body.touch .tbtn, body.touch #stick { display:block; }
+  #btnFire { right:22px; bottom:calc(110px + env(safe-area-inset-bottom)); width:88px; height:88px; font-size:15px; background:rgba(239,68,68,.85); }
+  #btnJump { right:122px; bottom:calc(30px + env(safe-area-inset-bottom)); width:60px; height:60px; font-size:12px; background:rgba(255,255,255,.18); }
+  #btnCrouch { right:30px; bottom:calc(24px + env(safe-area-inset-bottom)); width:60px; height:60px; font-size:11px; background:rgba(255,255,255,.18); }
+  #btnReload { right:196px; bottom:calc(30px + env(safe-area-inset-bottom)); width:52px; height:52px; font-size:11px; background:rgba(255,255,255,.14); }
+  #btnWeapon { right:22px; bottom:calc(210px + env(safe-area-inset-bottom)); width:60px; height:60px; font-size:11px; background:rgba(251,191,36,.85); color:#1a1005; }
+  #btnAct { left:50%; transform:translateX(-50%); bottom:calc(30px + env(safe-area-inset-bottom)); width:auto; height:auto; padding:13px 26px; border-radius:999px; font-size:15px; background:rgba(34,197,94,.92); color:#04140a; display:none; }
+  body.touch #btnAct.show { display:block; }
+  #btnAct.show { display:block; }
+  #btnScope { right:118px; bottom:calc(128px + env(safe-area-inset-bottom)); width:56px; height:56px; font-size:11px; background:rgba(59,130,246,.8); }
+  #btnHeal { left:160px; bottom:calc(30px + env(safe-area-inset-bottom)); width:60px; height:60px; font-size:11px; background:rgba(34,197,94,.8); }
+  #nightRow { display:flex; gap:8px; align-items:center; justify-content:center; margin-top:12px; font-size:13px; font-weight:700; background:rgba(255,255,255,.07); border-radius:12px; padding:10px; cursor:pointer; }
+  #nightRow input { width:18px; height:18px; }
+  #cross { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:4; font-size:22px; opacity:.9; pointer-events:none; text-shadow:0 1px 4px #000; }
+  #hitmark { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) rotate(45deg); width:34px; height:34px; border:3px solid #f00; border-left-color:transparent; border-right-color:transparent; border-radius:50%; z-index:4; display:none; pointer-events:none; }
+  #dmgvin { position:fixed; inset:0; z-index:4; pointer-events:none; opacity:0; background:radial-gradient(ellipse at center, transparent 55%, rgba(255,0,0,.55) 100%); transition:opacity .15s; }
+  #killfeed { position:fixed; top:calc(60px + env(safe-area-inset-top)); left:10px; z-index:5; font-size:12px; pointer-events:none; max-width:46vw; }
+  #killfeed div { background:rgba(0,0,0,.55); margin-top:4px; padding:4px 8px; border-radius:8px; }
+  #minimap { position:fixed; top:calc(56px + env(safe-area-inset-top)); right:10px; z-index:5; width:124px; height:124px; border-radius:12px; border:2px solid rgba(255,255,255,.35); background:rgba(0,0,0,.5); pointer-events:none; }
+  #wname { color:#fbbf24; }
+  #loader { position:fixed; left:10px; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:5; font-size:11px; background:rgba(0,0,0,.55); padding:5px 9px; border-radius:8px; pointer-events:none; max-width:60vw; }
+  #speedo { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(96px + env(safe-area-inset-bottom)); z-index:5; font-size:13px; font-weight:800; background:rgba(0,0,0,.55); padding:6px 14px; border-radius:999px; display:none; pointer-events:none; }
+  @media (max-width:640px){ #card h1{font-size:24px} .pill{font-size:11px; padding:5px 9px} #hud{padding-right:8px} #minimap{width:92px;height:92px} #killfeed{max-width:56vw} }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="dmgvin"></div>
+<div id="cross">◎</div>
+<div id="hitmark"></div>
+<div id="hud">
+  <div class="pill">❤ <span id="hp">100</span><span id="hpbar"><span id="hpfill" style="display:block"></span></span></div>
+  <div class="pill">⚡<span id="stbar"><span id="stfill" style="display:block"></span></span></div>
+  <div class="pill">🔫 <span id="wname">P-1911</span> <span id="ammo">12</span>/<span id="ammoRes">∞</span></div>
+  <div class="pill">🦺 <span id="armor">—</span></div>
+  <div class="pill">💊 <span id="meds">0</span></div>
+  <div class="pill">☠ <span id="kills">0</span></div>
+  <div class="pill">👥 <span id="alive">10</span></div>
+  <div class="pill">🛡 <span id="zone">0:18</span> <span id="phase">P1</span></div>
+</div>
+<canvas id="minimap" width="248" height="248"></canvas>
+<div id="killfeed"></div>
+<div id="loader">yükleniyor…</div>
+<div id="speedo">0 km/h</div>
+
+<div id="menu">
+  <div id="card">
+    <div class="badge">V3 • 3D • MOBİL + TABLET + PC • ERANGEL-MINI</div>
+    <h1>SAVAŞ ALANI <span>MINI V3</span></h1>
+    <p>PUBG tarzı mini battle-royale. <b>Erangel-Mini</b> adası: Pochinki, Rozhok, School, Georgopol.<br>Silah + yelek bul, kit bas, drop kovala, UAZ'a bin — <b>son kalan kazanır!</b></p>
+    <p style="font-size:12px;opacity:.8">🔫 P-1911 / AK / SPAS / KAR98 / AWM &nbsp;•&nbsp; 🦺 yelek &nbsp;•&nbsp; 💊 kit &nbsp;•&nbsp; 📦 drop &nbsp;•&nbsp; 🚙 UAZ &nbsp;•&nbsp; 🌙 gece<br>📱 joystick + ATEŞ &nbsp;•&nbsp; 🖥 WASD + fare + Shift koş / C eğil / F bin / E al / H kit / V dürbün / R doldur</p>
+    <label id="nightRow"><input type="checkbox" id="nightChk"> 🌙 GECE MODU (farlar + yıldızlar)</label>
+    <button id="btnStart">SAVAŞA BAŞLA</button>
+    <button id="btnHow">Nasıl Oynanır?</button>
+    <div id="how">• <b>Hareket:</b> WASD / sol joystick (tam it = koş, stamina yer)<br>• <b>Nişan:</b> fare sürükle / sağ tarafı sürükle<br>• <b>Ateş:</b> tıkla / ATEŞ (AK otomatik)<br>• <b>Dürbün:</b> V / sağ tık / DÜRBÜN (KAR98 + AWM)<br>• <b>AL / BİN:</b> yeşil buton veya E / F<br>• <b>Kit bas:</b> H veya KİT (💊 topladıkça, 2.5 sn'de +60 can)<br>• <b>Yelek:</b> 🦺 Sv2/Sv3 hasarı %30-45 azaltır<br>• <b>Drop:</b> uçak 📦 atar, içinde keskin nişancı + Sv3 + kit!<br>• <b>Araç:</b> UAZ'a bin, botları ez!<br>• SPAS yakında ölümcül, uzakta zayıf. Beyaz çember = güvenli alan!</div>
+    <p style="font-size:11px;opacity:.65">Not: botlar gerçek oyuncu isimleri kullanır. Gerçek 100 kişilik online için ayrı sunucu gerekir — kod sunucuya hazır yapıda.</p>
+    <button id="btnStart">SAVAŞA BAŞLA</button>
+    <button id="btnHow">Nasıl Oynanır?</button>
+    <div id="how">• <b>Hareket:</b> WASD / sol joystick (tam it = koş, stamina yer)<br>• <b>Nişan:</b> fare sürükle / sağ tarafı sürükle<br>• <b>Ateş:</b> tıkla / ATEŞ (AK otomatik)<br>• <b>AL / BİN:</b> ortaya çıkan yeşil buton veya E / F<br>• <b>Silah değiştir:</b> 1-2 veya SİLAH butonu<br>• <b>Eğil:</b> C veya EĞİL (daha az hasar + sessiz)<br>• <b>Araç:</b> UAZ'a bin, botları ezebilirsin!<br>• Beyaz çember = güvenli alan. Her fazda hasar artar!</div>
+  </div>
+</div>
+
+<div id="over">
+  <div id="overCard">
+    <h2 id="overTitle">#1 OLDUN!</h2>
+    <p id="overText"></p>
+    <button id="btnAgain">TEKRAR OYNA</button>
+  </div>
+</div>
+
+<div id="stick"><div id="knob"></div></div>
+<button class="tbtn" id="btnFire">ATEŞ</button>
+<button class="tbtn" id="btnJump">ZIPLA</button>
+<button class="tbtn" id="btnCrouch">EĞİL</button>
+<button class="tbtn" id="btnReload">DOLDR</button>
+<button class="tbtn" id="btnWeapon">SİLAH</button>
+<button class="tbtn" id="btnScope">DÜRBÜN</button>
+<button class="tbtn" id="btnHeal">KİT</button>
+<button class="tbtn" id="btnAct">AL</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+// ---------- helpers / HUD ----------
+var loader=document.getElementById('loader'), hpEl=document.getElementById('hp'), hpfill=document.getElementById('hpfill');
+var ammoEl=document.getElementById('ammo'), killsEl=document.getElementById('kills'), aliveEl=document.getElementById('alive');
+var zoneEl=document.getElementById('zone'), phaseEl=document.getElementById('phase'), feed=document.getElementById('killfeed');
+var hitmark=document.getElementById('hitmark'), dmgvin=document.getElementById('dmgvin'), stfill=document.getElementById('stfill');
+var wnameEl=document.getElementById('wname'), btnAct=document.getElementById('btnAct'), speedo=document.getElementById('speedo');
+var armorEl=document.getElementById('armor'), medsEl=document.getElementById('meds'), crossEl=document.getElementById('cross');
+var mm=document.getElementById('minimap'), mmc=mm.getContext('2d');
+function log(s){ try{loader.textContent=s;}catch(e){} }
+function addFeed(s){ var d=document.createElement('div'); d.textContent=s; feed.prepend(d); while(feed.children.length>4) feed.lastChild.remove(); setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d);},4500); }
+function hurtFlash(){ dmgvin.style.opacity=1; setTimeout(function(){dmgvin.style.opacity=0;},180); }
+if('ontouchstart' in window || navigator.maxTouchPoints>0) document.body.classList.add('touch');
+
+// ---------- multiplayer stub (gerçek sunucu için hazır nokta) ----------
+// Gerçek 100 kişilik online: burada WebSocket'e bağlanıp bots[] yerine
+// sunucudan gelen oyuncu pozisyonları basılır. Şimdilik BOT modu.
+var NET = { online:false, url:null,
+  connect:function(url){ log('Online sunucu yok — bot modunda devam (URL: '+url+')'); }
+};
+
+// ---------- state ----------
+var state={playing:false,hp:100,stam:100,kills:0,alive:10,over:false,yaw:0,pitch:-0.32,crouch:false,driving:false,slot:0,armor:0,armorName:'—',meds:0,healT:0,scoped:false,night:false};
+window.addEventListener('contextmenu',function(e){ if(e.target&&e.target.id==='game')e.preventDefault(); });
+var keys={};
+window.addEventListener('keydown',function(e){
+  keys[e.code]=true;
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.code)>=0) e.preventDefault();
+  if(e.code==='KeyR') startReload();
+  if(e.code==='KeyE') doInteract();
+  if(e.code==='KeyF') toggleCar();
+  if(e.code==='Digit1') switchSlot(0);
+  if(e.code==='Digit2') switchSlot(1);
+  if(e.code==='KeyC') toggleCrouch();
+  if(e.code==='KeyH') useMed();
+  if(e.code==='KeyV') toggleScope();
+});
+window.addEventListener('keyup',function(e){ keys[e.code]=false; });
+
+// ---------- audio (dosyasız synth) ----------
+var AC=null, engineOsc=null, engineGain=null, noiseBuf=null;
+try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+function ac(){ if(AC&&AC.state==='suspended')AC.resume(); return AC; }
+function tone(f,dur,type,vol,slide){
+  if(!ac())return; try{
+    var o=AC.createOscillator(),g=AC.createGain(); o.type=type||'square'; o.frequency.value=f;
+    if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),AC.currentTime+dur);
+    g.gain.value=vol||0.07; o.connect(g); g.connect(AC.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+dur); o.stop(AC.currentTime+dur);
+  }catch(e){}
+}
+function noiseShot(dur,cutoff,vol){
+  if(!ac())return; try{
+    if(!noiseBuf){ noiseBuf=AC.createBuffer(1,AC.sampleRate*0.3,AC.sampleRate); var d=noiseBuf.getChannelData(0); for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1; }
+    var s=AC.createBufferSource(); s.buffer=noiseBuf;
+    var f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=cutoff||1200;
+    var g=AC.createGain(); g.gain.value=vol||0.25; s.connect(f); f.connect(g); g.connect(AC.destination);
+    s.start(); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+dur); s.stop(AC.currentTime+dur);
+  }catch(e){}
+}
+var WEAPONS=[
+  {name:'P-1911', dmg:20, cd:0.34, mag:12, auto:false, len:0.55, col:0x1f2937, snd:function(){noiseShot(0.12,1800,0.22); tone(520,0.08,'square',0.05,-300);}},
+  {name:'AK-MINI',dmg:26, cd:0.14, mag:30, auto:true,  len:1.1,  col:0x4a2f18, snd:function(){noiseShot(0.11,1100,0.28); tone(200,0.09,'sawtooth',0.07,-120);}},
+  {name:'AWM-MINI',dmg:120,cd:1.35, mag:5,  auto:false, len:1.45, col:0x14301c, scope:true, snd:function(){noiseShot(0.35,700,0.35); tone(110,0.3,'sawtooth',0.09,-60);}},
+  {name:'SPAS-MINI',dmg:80,cd:0.95, mag:6,  auto:false, len:0.9,  col:0x5b3416, falloff:true, snd:function(){noiseShot(0.3,900,0.34); tone(150,0.2,'sawtooth',0.09,-90);}},
+  {name:'KAR98-MINI',dmg:90,cd:1.1, mag:5,  auto:false, len:1.35, col:0x2a3a5c, scope:true, snd:function(){noiseShot(0.3,800,0.32); tone(140,0.25,'sawtooth',0.09,-70);}}
+];
+var inv=[{w:0,ammo:12},{w:-1,ammo:0}]; // slot0 tabanca dolu, slot1 boş
+var reloadT=0, shootCd=0;
+function curW(){ return inv[state.slot].w>=0?WEAPONS[inv[state.slot].w]:null; }
+function refreshAmmo(){ var c=curW(); wnameEl.textContent=c?c.name:'—'; ammoEl.textContent=c?inv[state.slot].ammo:'0'; }
+function switchSlot(i){ if(i===state.slot||inv[i].w<0||reloadT>0)return; state.slot=i; refreshAmmo(); tone(700,0.06,'square',0.05); updateGunMesh();
+  var c=curW(); if(state.scoped&&(!c||!c.scope)){state.scoped=false;crossEl.textContent='◎';} }
+function startReload(){ var s=inv[state.slot]; var c=curW(); if(!c||reloadT>0||s.ammo>=c.mag)return; reloadT=(c.name==='AWM-MINI'||c.name==='KAR98-MINI'?2.2:(c.name==='SPAS-MINI'?2.0:1.4)); log('dolduruluyor…'); tone(400,0.1,'square',0.05); tone(600,0.1,'square',0.05); }
+function toggleScope(){ var c=curW(); if(!c||!c.scope||state.driving){ if(state.scoped){state.scoped=false; crossEl.textContent='◎';} return; } state.scoped=!state.scoped; crossEl.textContent=state.scoped?'⊕':'◎'; tone(state.scoped?900:500,0.07,'square',0.05); }
+function useMed(){
+  if(!state.playing||state.over||state.driving)return;
+  if(state.meds<=0){log('kitin yok! 💊 bul');return;}
+  if(state.hp>=100||state.healT>0)return;
+  state.meds--;medsEl.textContent=state.meds;state.healT=2.5;
+  log('kit basılıyor… (+60)');tone(660,0.15,'sine',0.07);
+}
+function doInteract(){
+  if(!state.playing||state.over)return;
+  if(nearLoot){ pickupLoot(nearLoot); return; }
+  if(nearCar){ toggleCar(); return; }
+}
+
+// ---------- touch ----------
+var joy={x:0,y:0,active:false,mag:0};
+var stick=document.getElementById('stick'),knob=document.getElementById('knob');
+var stickId=null,lookId=null,lx=0,ly=0;
+stick.addEventListener('touchstart',function(e){e.preventDefault();ac();stickId=e.changedTouches[0].identifier;},{passive:false});
+window.addEventListener('touchmove',function(e){
+  for(var i=0;i<e.changedTouches.length;i++){ var t=e.changedTouches[i];
+    if(t.identifier===stickId){ var r=stick.getBoundingClientRect();
+      var dx=t.clientX-(r.left+r.width/2),dy=t.clientY-(r.top+r.height/2);
+      var m=Math.hypot(dx,dy)||1,max=r.width/2; if(m>max){dx*=max/m;dy*=max/m;m=max;}
+      knob.style.transform='translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
+      joy.x=dx/max; joy.y=dy/max; joy.mag=Math.min(1,m/max); joy.active=true;
+    } else if(t.identifier===lookId){ state.yaw-=(t.clientX-lx)*0.0062; state.pitch-=(t.clientY-ly)*0.0042;
+      state.pitch=Math.max(-1.1,Math.min(0.25,state.pitch)); lx=t.clientX; ly=t.clientY; }
+  }
+},{passive:true});
+window.addEventListener('touchend',function(e){
+  for(var i=0;i<e.changedTouches.length;i++){
+    if(e.changedTouches[i].identifier===stickId){stickId=null;joy.x=0;joy.y=0;joy.mag=0;joy.active=false;knob.style.transform='translate(-50%,-50%)';}
+    if(e.changedTouches[i].identifier===lookId)lookId=null;
+  }
+});
+document.getElementById('game').addEventListener('touchstart',function(e){ ac();
+  for(var i=0;i<e.changedTouches.length;i++){ if(e.changedTouches[i].clientX>window.innerWidth*0.4&&lookId===null){lookId=e.changedTouches[i].identifier;lx=e.changedTouches[i].clientX;ly=e.changedTouches[i].clientY;} }
+},{passive:true});
+var firing=false;
+document.getElementById('btnFire').addEventListener('touchstart',function(e){e.preventDefault();ac();firing=true;tryShoot();},{passive:false});
+document.getElementById('btnFire').addEventListener('touchend',function(){firing=false;});
+document.getElementById('btnJump').addEventListener('touchstart',function(e){e.preventDefault();doJump();},{passive:false});
+document.getElementById('btnCrouch').addEventListener('touchstart',function(e){e.preventDefault();toggleCrouch();},{passive:false});
+document.getElementById('btnReload').addEventListener('touchstart',function(e){e.preventDefault();startReload();},{passive:false});
+document.getElementById('btnWeapon').addEventListener('touchstart',function(e){e.preventDefault();switchSlot(state.slot===0?1:0);},{passive:false});
+document.getElementById('btnScope').addEventListener('touchstart',function(e){e.preventDefault();toggleScope();},{passive:false});
+document.getElementById('btnHeal').addEventListener('touchstart',function(e){e.preventDefault();useMed();},{passive:false});
+btnAct.addEventListener('touchstart',function(e){e.preventDefault();doInteract();},{passive:false});
+btnAct.addEventListener('click',function(){doInteract();});
+// ---------- mouse ----------
+var dragging=false,px=0,py=0,mouseFire=false;
+var cvs=document.getElementById('game');
+cvs.addEventListener('mousedown',function(e){dragging=true;px=e.clientX;py=e.clientY;ac();if(e.button===2){toggleScope();return;}mouseFire=true;tryShoot();});
+window.addEventListener('mousemove',function(e){ if(dragging&&state.playing){state.yaw-=(e.clientX-px)*0.0052;state.pitch-=(e.clientY-py)*0.0032;state.pitch=Math.max(-1.1,Math.min(0.25,state.pitch));px=e.clientX;py=e.clientY;} });
+window.addEventListener('mouseup',function(){dragging=false;mouseFire=false;firing=false;});
+
+// ---------- menu ----------
+var menu=document.getElementById('menu'),over=document.getElementById('over');
+document.getElementById('btnHow').addEventListener('click',function(){var h=document.getElementById('how');h.style.display=(h.style.display==='block')?'none':'block';});
+document.getElementById('btnStart').addEventListener('click',function(){var nc=document.getElementById('nightChk');state.night=!!(nc&&nc.checked);menu.style.display='none';state.playing=true;ac();log(state.night?'Gece operasyonu 🌙 — farlar açık, drop\'u kaçırma!':'Erangel-Mini\'desin — silah bul, UAZ\'a bin, alanda kal!');tone(523,0.12,'square',0.06);setTimeout(function(){tone(784,0.15,'square',0.06);},130);});
+document.getElementById('btnAgain').addEventListener('click',function(){location.reload();});
+
+// ================= 3D =================
+var MAP=340, HALF=170;
+var scene,camera,renderer,player={},gunMesh=null,bots=[],loots=[],colliders=[],tracers=[],clouds=[];
+var zoneR=150,zoneX=0,zoneZ=0,zonePhase=1,zoneT=18,zoneDmg=2;
+var playerPos={x:0,z:140},vy=0,walkCycle=0,car=null,nearLoot=null,nearCar=false,carSpeed=0,carYaw=0;
+state.plane=null;state.falling=[];state.dropT=45;
+var BOTNAMES=['Emre','Aslı','Mert','Zeynep','Burak','Elif','Kaan','Selin','Deniz'];
+var houseMeshes=[];
+
+function hasThree(){return typeof window.THREE!=='undefined';}
+function rnd(a,b){return a+Math.random()*(b-a);}
+
+function groundTexture(){
+  var c=document.createElement('canvas');c.width=c.height=1024;var g=c.getContext('2d');
+  g.fillStyle='#5f8f52';g.fillRect(0,0,1024,1024);
+  for(var i=0;i<9000;i++){g.fillStyle='rgba('+(60+Math.random()*60|0)+','+(120+Math.random()*60|0)+','+(60+Math.random()*40|0)+',0.5)';var s=1+Math.random()*3;g.fillRect(Math.random()*1024,Math.random()*1024,s,s);}
+  // tarlalar
+  g.fillStyle='rgba(160,140,80,0.35)';for(var f=0;f<8;f++){g.fillRect(Math.random()*900,Math.random()*900,90+Math.random()*120,60+Math.random()*90);}
+  // yollar (asfalt)
+  g.fillStyle='#4b4b4f';g.fillRect(0,470,1024,64);g.fillRect(480,0,64,1024);
+  g.fillStyle='#d8d8d8';for(var x=0;x<1024;x+=40){g.fillRect(x,499,22,3);}for(var y=0;y<1024;y+=40){g.fillRect(509,y,3,22);}
+  // toprak yollar
+  g.strokeStyle='rgba(150,120,80,0.8)';g.lineWidth=14;
+  g.beginPath();g.moveTo(120,120);g.lineTo(880,300);g.stroke();
+  g.beginPath();g.moveTo(200,900);g.lineTo(800,700);g.stroke();
+  var t=new THREE.CanvasTexture(c);return t;
+}
+
+function makeHuman(bodyCol,helmetCol){
+  var T=window.THREE,grp=new T.Group();
+  var mat=function(c){return new T.MeshLambertMaterial({color:c});};
+  var legL=new T.Mesh(new T.BoxGeometry(0.32,0.8,0.36),mat(0x2b3440));legL.position.set(-0.2,0.4,0);grp.add(legL);
+  var legR=legL.clone();legR.position.x=0.2;grp.add(legR);
+  var torso=new T.Mesh(new T.BoxGeometry(0.85,1.05,0.55),mat(bodyCol));torso.position.y=1.35;torso.castShadow=true;grp.add(torso);
+  var vest=new T.Mesh(new T.BoxGeometry(0.92,0.6,0.62),mat(0x3f3f46));vest.position.y=1.4;grp.add(vest);
+  var pack=new T.Mesh(new T.BoxGeometry(0.55,0.7,0.3),mat(0x6b4a2a));pack.position.set(0,1.45,0.44);grp.add(pack);
+  // kollar ileride nişan pozu (PUBG tutuşu)
+  var armL=new T.Mesh(new T.BoxGeometry(0.24,0.3,0.8),mat(bodyCol));armL.position.set(-0.3,1.45,-0.45);grp.add(armL);
+  var armR=new T.Mesh(new T.BoxGeometry(0.24,0.3,0.75),mat(bodyCol));armR.position.set(0.3,1.42,-0.42);grp.add(armR);
+  var head=new T.Mesh(new T.SphereGeometry(0.32,14,12),mat(0xf2c89b));head.position.y=2.15;head.castShadow=true;grp.add(head);
+  var helm=new T.Mesh(new T.SphereGeometry(0.38,14,10,0,Math.PI*2,0,Math.PI/1.9),mat(helmetCol));helm.position.y=2.22;grp.add(helm);
+  grp.userData={legL:legL,legR:legR,armL:armL,armR:armR,head:head};
+  return grp;
+}
+function updateGunMesh(){
+  if(!player.grp||!hasThree())return;
+  if(gunMesh){player.grp.remove(gunMesh);gunMesh=null;}
+  var c=curW();if(!c)return;var T=window.THREE;
+  gunMesh=new T.Group();
+  var m=new T.Mesh(new T.BoxGeometry(0.14,0.18,c.len),new T.MeshLambertMaterial({color:c.col}));
+  m.position.set(0,0,-c.len/2);gunMesh.add(m);
+  var grip=new T.Mesh(new T.BoxGeometry(0.12,0.3,0.12),new T.MeshLambertMaterial({color:0x111111}));
+  grip.position.set(0,-0.2,-0.15);gunMesh.add(grip);
+  if(c.scope){var sc=new T.Mesh(new T.CylinderGeometry(0.09,0.09,0.3,10),new T.MeshLambertMaterial({color:0x111111}));sc.rotation.x=Math.PI/2;sc.position.set(0,0.22,-0.3);gunMesh.add(sc);}
+  if(c.falloff){var pump=new T.Mesh(new T.BoxGeometry(0.13,0.13,0.4),new T.MeshLambertMaterial({color:0x6b4a2a}));pump.position.set(0,-0.12,-0.55);gunMesh.add(pump);}
+  gunMesh.position.set(0.32,1.5,-0.55);
+  player.grp.add(gunMesh);
+}
+
+function addCollider(x,z,hw,hd){colliders.push({x:x,z:z,hw:hw,hd:hd});}
+function collide(x,z,pad){
+  pad=pad||0.7;
+  if(Math.abs(x)>HALF||Math.abs(z)>HALF)return true;
+  for(var i=0;i<colliders.length;i++){var b=colliders[i];if(Math.abs(x-b.x)<b.hw+pad&&Math.abs(z-b.z)<b.hd+pad)return true;}
+  return false;
+}
+
+function makeHouse(x,z,w,d,h,wallCol,roofCol){
+  var T=window.THREE,g=new T.Group();
+  var walls=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshLambertMaterial({color:wallCol}));
+  walls.position.y=h/2;walls.castShadow=true;walls.receiveShadow=true;g.add(walls);
+  var trim=new T.Mesh(new T.BoxGeometry(w+0.3,0.5,d+0.3),new T.MeshLambertMaterial({color:0x4a4a52}));
+  trim.position.y=0.25;g.add(trim);
+  var roof=new T.Mesh(new T.ConeGeometry(Math.max(w,d)*0.78,2.2,4),new T.MeshLambertMaterial({color:roofCol}));
+  roof.position.y=h+1.1;roof.rotation.y=Math.PI/4;roof.castShadow=true;g.add(roof);
+  var chim=new T.Mesh(new T.BoxGeometry(0.7,1.6,0.7),new T.MeshLambertMaterial({color:0x6b5a4a}));
+  chim.position.set(w*0.25,h+1.2,d*0.1);chim.castShadow=true;g.add(chim);
+  var winMat=new T.MeshBasicMaterial({color:state.night?0xffe066:0xffe9a3});
+  for(var k=-1;k<=1;k+=2){
+    var win=new T.Mesh(new T.PlaneGeometry(0.9,0.9),winMat);
+    win.position.set(k*w*0.22,h*0.55,-d/2-0.02);win.rotation.y=Math.PI;g.add(win);
+    var win2=win.clone();win2.position.z=d/2+0.02;win2.rotation.y=0;g.add(win2);
+  }
+  var door=new T.Mesh(new T.PlaneGeometry(1.1,2.0),new T.MeshBasicMaterial({color:0x2a1d12}));
+  door.position.set(w*0.28,1.0,-d/2-0.02);door.rotation.y=Math.PI;g.add(door);
+  g.position.set(x,0,z);scene.add(g);houseMeshes.push(g);
+  addCollider(x,z,w/2,d/2);
+}
+function makeTree(x,z,s){
+  var T=window.THREE;var g=new T.Group();
+  var trunk=new T.Mesh(new T.CylinderGeometry(0.25*s,0.35*s,2.2*s,7),new T.MeshLambertMaterial({color:0x6b4423}));
+  trunk.position.y=1.1*s;trunk.castShadow=true;g.add(trunk);
+  if(Math.random()<0.5){ // çam
+    var c1=new T.Mesh(new T.ConeGeometry(1.7*s,2.6*s,8),new T.MeshLambertMaterial({color:state.night?0x1d4423:0x2f6b2f}));
+    c1.position.y=3.0*s;c1.castShadow=true;g.add(c1);
+    var c2=new T.Mesh(new T.ConeGeometry(1.2*s,1.8*s,8),new T.MeshLambertMaterial({color:state.night?0x24522b:0x3a7d3a}));
+    c2.position.y=4.3*s;g.add(c2);
+  }else{ // yapraklı
+    var leafCols=state.night?[0x1d4423,0x24522b]:[0x3f7d36,0x4d8a45,0x5a9a3f];
+    for(var li=0;li<3;li++){
+      var leaf=new T.Mesh(new T.SphereGeometry((1.1-li*0.2)*s,8,7),new T.MeshLambertMaterial({color:leafCols[li%leafCols.length]}));
+      leaf.position.set(rnd(-0.5,0.5)*s,(2.6+li*0.9)*s,rnd(-0.5,0.5)*s);leaf.castShadow=true;g.add(leaf);
+    }
+  }
+  g.position.set(x,0,z);g.rotation.y=Math.random()*6.28;scene.add(g);
+  addCollider(x,z,0.4*s,0.4*s);
+}
+function makeRock(x,z,s){
+  var T=window.THREE;var m=new T.Mesh(new T.DodecahedronGeometry(s,0),new T.MeshLambertMaterial({color:0x8a8f96}));
+  m.position.set(x,s*0.5,z);m.rotation.set(Math.random(),Math.random()*3,0);m.castShadow=true;scene.add(m);
+  addCollider(x,z,s*0.8,s*0.8);
+}
+function makeCar(x,z){
+  var T=window.THREE;var g=new T.Group();
+  var body=new T.Mesh(new T.BoxGeometry(2.2,0.9,4.4),new T.MeshLambertMaterial({color:0x4a5d23}));
+  body.position.y=1.0;body.castShadow=true;g.add(body);
+  var cab=new T.Mesh(new T.BoxGeometry(2.0,0.8,2.2),new T.MeshLambertMaterial({color:0x3b4a1c}));
+  cab.position.set(0,1.8,0.2);cab.castShadow=true;g.add(cab);
+  var glass=new T.Mesh(new T.BoxGeometry(1.9,0.5,0.1),new T.MeshBasicMaterial({color:0x9fc3d8}));
+  glass.position.set(0,1.8,-0.95);g.add(glass);
+  var wheels=[];
+  var wg=new T.CylinderGeometry(0.5,0.5,0.4,12);
+  var wm=new T.MeshLambertMaterial({color:0x141414});
+  [[-1.1,-1.5],[1.1,-1.5],[-1.1,1.5],[1.1,1.5]].forEach(function(p){
+    var w=new T.Mesh(wg,wm);w.rotation.z=Math.PI/2;w.position.set(p[0],0.5,p[1]);g.add(w);wheels.push(w);
+  });
+  var hl=new T.Mesh(new T.BoxGeometry(0.35,0.25,0.1),new T.MeshBasicMaterial({color:0xfff6b0}));
+  hl.position.set(-0.7,1.0,-2.21);g.add(hl);var hl2=hl.clone();hl2.position.x=0.7;g.add(hl2);
+  var bumper=new T.Mesh(new T.BoxGeometry(2.3,0.3,0.25),new T.MeshLambertMaterial({color:0x222222}));
+  bumper.position.set(0,0.5,-2.25);g.add(bumper);
+  var spare=new T.Mesh(new T.CylinderGeometry(0.5,0.5,0.3,10),new T.MeshLambertMaterial({color:0x141414}));
+  spare.rotation.x=Math.PI/2;spare.position.set(0,1.1,2.3);g.add(spare);
+  var beam=null;
+  if(state.night){
+    beam=new T.SpotLight(0xfff2c0,1.6,45,0.5,0.4,1);
+    beam.position.set(0,1.4,-2.2);
+    var tgt=new T.Object3D();tgt.position.set(0,0,-14);g.add(tgt);beam.target=tgt;g.add(beam);
+  }
+  g.position.set(x,0,z);scene.add(g);
+  return {mesh:g,wheels:wheels,x:x,z:z,yaw:0,hp:100,alive:true};
+}
+function spawnLoot(x,z,wi){
+  var T=window.THREE;var g=new T.Group();
+  var c=WEAPONS[wi];
+  var base=new T.Mesh(new T.BoxGeometry(1.6,0.15,0.7),new T.MeshLambertMaterial({color:0x111827}));
+  g.add(base);
+  var glowCols=[0x6b7280,0xf59e0b,0x22c55e,0xf97316,0x38bdf8];
+  var gun=new T.Mesh(new T.BoxGeometry(0.16,0.16,c.len),new T.MeshBasicMaterial({color:glowCols[wi]||0x9ca3af}));
+  gun.rotation.y=0.4;gun.position.y=0.35;g.add(gun);
+  var glow=new T.Mesh(new T.CylinderGeometry(1.0,1.0,0.06,16),new T.MeshBasicMaterial({color:glowCols[wi]||0x6b7280,transparent:true,opacity:0.35}));
+  glow.position.y=0.05;g.add(glow);
+  g.position.set(x,0.2,z);scene.add(g);
+  loots.push({mesh:g,x:x,z:z,kind:'w',w:wi,taken:false,phase:Math.random()*6});
+}
+function spawnPickup(x,z,kind,data){
+  var T=window.THREE;var g=new T.Group();
+  if(kind==='armor'){
+    var box=new T.Mesh(new T.BoxGeometry(0.9,0.9,0.5),new T.MeshLambertMaterial({color:data.lvl>=3?0x1f2937:0x2f5233}));
+    box.position.y=0.6;box.castShadow=true;g.add(box);
+    var plate=new T.Mesh(new T.BoxGeometry(0.6,0.6,0.1),new T.MeshBasicMaterial({color:0xfbbf24}));
+    plate.position.set(0,0.6,-0.3);plate.rotation.y=Math.PI;g.add(plate);
+  }else{ // med
+    var mbox=new T.Mesh(new T.BoxGeometry(0.8,0.5,0.8),new T.MeshLambertMaterial({color:0xf8fafc}));
+    mbox.position.y=0.4;mbox.castShadow=true;g.add(mbox);
+    var c1=new T.Mesh(new T.BoxGeometry(0.5,0.16,0.16),new T.MeshBasicMaterial({color:0xef4444}));c1.position.y=0.68;g.add(c1);
+    var c2=new T.Mesh(new T.BoxGeometry(0.16,0.16,0.5),new T.MeshBasicMaterial({color:0xef4444}));c2.position.y=0.68;g.add(c2);
+  }
+  var glow=new T.Mesh(new T.CylinderGeometry(0.9,0.9,0.06,16),new T.MeshBasicMaterial({color:kind==='armor'?0x3b82f6:0xef4444,transparent:true,opacity:0.35}));
+  glow.position.y=0.05;g.add(glow);
+  g.position.set(x,0.1,z);scene.add(g);
+  loots.push({mesh:g,x:x,z:z,kind:kind,w:-1,armorLvl:(data&&data.lvl)||0,taken:false,phase:Math.random()*6});
+}
+// ---------- airdrop (uçak + paraşütlü kasa) ----------
+function spawnDrop(){
+  var T=window.THREE;
+  var dx=zoneX+rnd(-zoneR*0.4,zoneR*0.4), dz=zoneZ+rnd(-zoneR*0.4,zoneR*0.4);
+  dx=Math.max(-HALF+20,Math.min(HALF-20,dx)); dz=Math.max(-HALF+20,Math.min(HALF-20,dz));
+  var plane=new T.Group();
+  var fus=new T.Mesh(new T.BoxGeometry(3,2,14),new T.MeshLambertMaterial({color:0x374151}));plane.add(fus);
+  var wing=new T.Mesh(new T.BoxGeometry(20,0.4,3),new T.MeshLambertMaterial({color:0x4b5563}));plane.add(wing);
+  var tail=new T.Mesh(new T.BoxGeometry(6,2.5,1),new T.MeshLambertMaterial({color:0x4b5563}));tail.position.set(0,1.5,6.5);plane.add(tail);
+  var ang=Math.random()*Math.PI*2, R=HALF+120;
+  var from={x:zoneX+Math.cos(ang)*R, z:zoneZ+Math.sin(ang)*R};
+  var to={x:zoneX-Math.cos(ang)*R, z:zoneZ-Math.sin(ang)*R};
+  plane.position.set(from.x,62,from.z);plane.rotation.y=Math.atan2(to.x-from.x,to.z-from.z);
+  scene.add(plane);
+  var dist=Math.hypot(to.x-from.x,to.z-from.z);
+  state.plane={mesh:plane,from:from,to:to,t:0,dur:dist/38,dropX:dx,dropZ:dz,dropped:false};
+  addFeed('🛩 Uçak yaklaşıyor — drop geliyor!');
+  log('🛩 Uçak sesine dikkat — 📦 drop birazdan düşer!');
+  tone(220,1.2,'sawtooth',0.05,120);
+}
+function releaseDropCrate(x,z){
+  var T=window.THREE;var g=new T.Group();
+  var crate=new T.Mesh(new T.BoxGeometry(2.2,2.2,2.2),new T.MeshLambertMaterial({color:0x7c4a1e}));
+  crate.castShadow=true;g.add(crate);
+  var band=new T.Mesh(new T.BoxGeometry(2.3,0.5,2.3),new T.MeshBasicMaterial({color:0xf59e0b}));g.add(band);
+  var chute=new T.Mesh(new T.ConeGeometry(3.2,2.4,8,1,true),new T.MeshLambertMaterial({color:0xf8fafc,side:T.DoubleSide,transparent:true,opacity:0.92}));
+  chute.position.y=4.5;g.add(chute);
+  g.position.set(x,58,z);scene.add(g);
+  state.falling.push({mesh:g,chute:chute,x:x,z:z,y:58,landed:false});
+}
+function landDropCrate(x,z){
+  var T=window.THREE;var g=new T.Group();
+  var crate=new T.Mesh(new T.BoxGeometry(2.2,2.2,2.2),new T.MeshLambertMaterial({color:0x7c4a1e}));
+  crate.position.y=1.1;crate.castShadow=true;g.add(crate);
+  var band=new T.Mesh(new T.BoxGeometry(2.3,0.5,2.3),new T.MeshBasicMaterial({color:0xf59e0b}));band.position.y=1.1;g.add(band);
+  var smoke=new T.Mesh(new T.CylinderGeometry(0.8,1.6,26,10,1,true),new T.MeshBasicMaterial({color:0xf97316,transparent:true,opacity:0.35,side:T.DoubleSide}));
+  smoke.position.y=14;g.add(smoke);
+  g.position.set(x,0,z);g.userData.smoke=smoke;scene.add(g);
+  addCollider(x,z,1.2,1.2);
+  loots.push({mesh:g,x:x,z:z,kind:'drop',w:-1,taken:false,phase:0,big:true});
+  addFeed('📦 DROP düştü! (turuncu duman)');
+  log('📦 Drop indi — KAR98/AWM + Sv3 yelek + 2 kit!');
+  tone(880,0.15,'square',0.08);setTimeout(function(){tone(1174,0.2,'square',0.08);},150);
+}
+
+function init3D(){
+  var T=window.THREE;
+  scene=new T.Scene();
+  scene.background=new T.Color(0x87bfe0);
+  scene.fog=new T.Fog(0x87bfe0,90,380);
+  camera=new T.PerspectiveCamera(72,innerWidth/innerHeight,0.1,800);
+  renderer=new T.WebGLRenderer({canvas:cvs,antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=T.PCFSoftShadowMap;
+  scene.add(new T.HemisphereLight(state.night?0x3a4a6b:0xcfe5ff,state.night?0x1a241a:0x446644,state.night?0.5:0.95));
+  var sun=new T.DirectionalLight(state.night?0x9db8ff:0xfff2d9,state.night?0.4:0.9);
+  sun.position.set(90,130,50);sun.castShadow=true;
+  sun.shadow.mapSize.width=1024;sun.shadow.mapSize.height=1024;
+  sun.shadow.camera.left=-120;sun.shadow.camera.right=120;sun.shadow.camera.top=120;sun.shadow.camera.bottom=-120;
+  sun.shadow.camera.far=400;scene.add(sun);
+  // güneş/ay + bulutlar + yıldızlar
+  var sunBall=new T.Mesh(new T.SphereGeometry(9,16,16),new T.MeshBasicMaterial({color:state.night?0xdbe7ff:0xfff7cc,fog:false}));
+  sunBall.position.set(180,190,-260);scene.add(sunBall);
+  if(state.night){
+    scene.background=new T.Color(0x060b18);scene.fog=new T.Fog(0x060b18,60,300);
+    var starGeo=new T.BufferGeometry(),sp=[];
+    for(var si=0;si<350;si++){sp.push(rnd(-500,500),rnd(60,300),rnd(-500,500));}
+    starGeo.setAttribute('position',new T.Float32BufferAttribute(sp,3));
+    scene.add(new T.Points(starGeo,new T.PointsMaterial({color:0xffffff,size:1.6,sizeAttenuation:false,fog:false})));
+  }
+  for(var ci=0;ci<9;ci++){
+    var cl=new T.Mesh(new T.SphereGeometry(rnd(8,16),10,8),new T.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.85}));
+    cl.scale.y=0.45;cl.position.set(rnd(-220,220),rnd(70,110),rnd(-220,220));scene.add(cl);clouds.push(cl);
+  }
+  // zemin
+  var ground=new T.Mesh(new T.PlaneGeometry(MAP+60,MAP+60),new T.MeshLambertMaterial({map:groundTexture()}));
+  ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  // deniz (ada hissi)
+  var sea=new T.Mesh(new T.PlaneGeometry(1200,1200),new T.MeshLambertMaterial({color:0x2f6f9f}));
+  sea.rotation.x=-Math.PI/2;sea.position.y=-0.4;scene.add(sea);
+  // ---- kasabalar ----
+  var towns=[
+    {n:'Pochinki',x:-60,z:-40},{n:'Rozhok',x:70,z:-70},{n:'School',x:0,z:0},
+    {n:'Georgopol',x:-40,z:80},{n:'Yasnaya',x:80,z:70}
+  ];
+  var wallCols=[0xd8cfc0,0xc9b896,0xb9c4cc,0xd0b49a,0xc4c9b8],roofCols=[0x8a3b2e,0x5b6b7a,0x6b4a2a,0x4a5d75,0x74563a];
+  towns.forEach(function(t,ti){
+    var n=3+Math.floor(Math.random()*2);
+    for(var i=0;i<n;i++){
+      var hx=t.x+rnd(-26,26),hz=t.z+rnd(-26,26);
+      if(Math.hypot(hx-t.x,hz-t.z)<6)hx+=10;
+      makeHouse(hx,hz,rnd(6,10),rnd(6,10),rnd(3.5,5),wallCols[(ti+i)%5],roofCols[(ti+i)%5]);
+    }
+    // çitler
+    for(var f=0;f<4;f++){
+      var fx=t.x+rnd(-30,30),fz=t.z+rnd(-30,30);
+      var fence=new T.Mesh(new T.BoxGeometry(rnd(6,12),1.1,0.25),new T.MeshLambertMaterial({color:0x7a5c3e}));
+      fence.position.set(fx,0.55,fz);fence.rotation.y=Math.random()*3;fence.castShadow=true;scene.add(fence);
+    }
+  });
+  // tek evler
+  for(var s=0;s<8;s++){makeHouse(rnd(-HALF+15,HALF-15),rnd(-HALF+15,HALF-15),rnd(5,8),rnd(5,8),rnd(3,4.5),wallCols[s%5],roofCols[s%5]);}
+  // ağaçlar / kayalar / otlar
+  for(var tr=0;tr<70;tr++){var tx=rnd(-HALF,HALF),tz=rnd(-HALF,HALF);if(Math.abs(tx)<55&&Math.abs(tz)<8)continue;if(Math.abs(tx)<8&&Math.abs(tz)<55)continue;if(Math.hypot(tx-0,tz-140)<10)continue;if(Math.hypot(tx-12,tz-118)<8)continue;if(collide(tx,tz,2.5))continue;makeTree(tx,tz,rnd(0.8,1.4));}
+  for(var rk=0;rk<16;rk++){var rx=rnd(-HALF,HALF),rz=rnd(-HALF,HALF);if(collide(rx,rz,2))continue;makeRock(rx,rz,rnd(0.8,1.8));}
+  for(var gr=0;gr<70;gr++){var gx=rnd(-HALF,HALF),gz=rnd(-HALF,HALF);var tuft=new T.Mesh(new T.ConeGeometry(0.35,1.0,5),new T.MeshLambertMaterial({color:0x4d8a45}));tuft.position.set(gx,0.5,gz);scene.add(tuft);}
+  // kasalar (siper)
+  for(var cr=0;cr<14;cr++){var cx=rnd(-HALF+10,HALF-10),cz=rnd(-HALF+10,HALF-10);if(collide(cx,cz,2))continue;
+    var crate=new T.Mesh(new T.BoxGeometry(1.6,1.6,1.6),new T.MeshLambertMaterial({color:0x8a6a3e}));
+    crate.position.set(cx,0.8,cz);crate.rotation.y=Math.random();crate.castShadow=true;scene.add(crate);addCollider(cx,cz,0.9,0.9);}
+  // ---- oyuncu ----
+  player.grp=makeHuman(0x2563eb,0x2f4a2f);player.grp.position.set(playerPos.x,0,playerPos.z);scene.add(player.grp);
+  updateGunMesh();
+  // ---- botlar (oyuncudan uzakta doğar) ----
+  for(var b=0;b<9;b++){
+    var grp=makeHuman(0xb91c1c,0x1f2937);
+    var a=Math.random()*Math.PI*2,r=60+Math.random()*80, bx=0, bz=0, tries=0;
+    do { a=Math.random()*Math.PI*2; r=60+Math.random()*80; bx=Math.cos(a)*r; bz=Math.sin(a)*r; tries++; }
+    while(tries<20 && Math.hypot(bx-playerPos.x,bz-playerPos.z)<55);
+    grp.position.set(bx,0,bz);scene.add(grp);
+    bots.push({mesh:grp,name:BOTNAMES[b],hp:100,dir:Math.random()*6.28,t:0,alive:true,shootCd:2+Math.random()*3,phase:Math.random()*6,hasRifle:Math.random()<0.4});
+  }
+  // ---- loot ----
+  var lootSpots=[];
+  houseMeshes.forEach(function(h){lootSpots.push({x:h.position.x+rnd(-4,4),z:h.position.z+rnd(-4,4)});});
+  for(var li=0;li<26&&li<lootSpots.length;li++){var L=lootSpots[li];var w=li<3?2:(li<7?4:(li<13?1:(li<17?3:0)));if(li>17&&Math.random()<0.5)continue;spawnLoot(L.x,L.z,w);}
+  spawnLoot(6,134,1);spawnLoot(-8,132,0);spawnLoot(2,128,3);
+  // yelek + kitler (kasabalara dağılmış)
+  for(var ai=0;ai<3&&ai<lootSpots.length;ai++){var A=lootSpots[(ai*7+3)%lootSpots.length];spawnPickup(A.x+2,A.z,'armor',{lvl:2});}
+  for(var mi=0;mi<5&&mi<lootSpots.length;mi++){var M=lootSpots[(mi*5+5)%lootSpots.length];spawnPickup(M.x-2,M.z,'med');}
+  spawnPickup(10,130,'armor',{lvl:2});spawnPickup(-4,136,'med');
+  // ---- araç ---- (doğuşa yakın, hemen bulunabilsin)
+  car=makeCar(12,118);
+  // ---- alan halkası ----
+  window.zoneMesh=new T.Mesh(new T.RingGeometry(zoneR-1.5,zoneR,72),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.9,side:T.DoubleSide}));
+  zoneMesh.rotation.x=-Math.PI/2;zoneMesh.position.y=0.15;scene.add(zoneMesh);
+  window.safeMesh=new T.Mesh(new T.CircleGeometry(zoneR,72),new T.MeshBasicMaterial({color:0xef4444,transparent:true,opacity:0.05,side:T.DoubleSide}));
+  safeMesh.rotation.x=-Math.PI/2;safeMesh.position.y=0.08;scene.add(safeMesh);
+  window.flash=new T.PointLight(0xffcc66,0,22);scene.add(flash);
+  window.addEventListener('resize',function(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  // minimap statik katman
+  buildMinimapBase();
+  refreshAmmo();
+  log('Erangel-Mini hazır — SAVAŞA BAŞLA!');
+}
+
+// ---------- minimap ----------
+var mmBase=null;
+function buildMinimapBase(){
+  mmBase=document.createElement('canvas');mmBase.width=mmBase.height=248;
+  var g=mmBase.getContext('2d');
+  g.fillStyle='#3d6b3d';g.fillRect(0,0,248,248);
+  g.fillStyle='#4b4b4f';var s=248/(MAP+60);
+  g.fillRect(0,124-6*s,248,12*s);g.fillRect(124-6*s,0,12*s,248);
+  g.fillStyle='rgba(216,207,192,0.9)';
+  houseMeshes.forEach(function(h){var x=(h.position.x+(MAP+60)/2)*s,y=(h.position.z+(MAP+60)/2)*s;g.fillRect(x-3,y-3,6,6);});
+}
+function drawMinimap(){
+  var g=mmc,S=248,W=MAP+60;
+  g.clearRect(0,0,248,248);
+  if(mmBase)g.drawImage(mmBase,0,0);
+  function dot(x,z,col,r){var sx=(x+W/2)/W*S,sy=(z+W/2)/W*S;g.fillStyle=col;g.beginPath();g.arc(sx,sy,r||4,0,7);g.fill();}
+  // alan
+  var zx=(zoneX+W/2)/W*S,zy=(zoneZ+W/2)/W*S,zr=zoneR/W*S;
+  g.strokeStyle='#fff';g.lineWidth=3;g.beginPath();g.arc(zx,zy,zr,0,7);g.stroke();
+  // loot (yakın) + drop (her zaman)
+  loots.forEach(function(L){if(L.taken)return;
+    if(L.kind==='drop'){var sx=(L.x+W/2)/W*S,sy=(L.z+W/2)/W*S;g.fillStyle='#f97316';g.fillRect(sx-5,sy-5,10,10);}
+    else if(Math.hypot(L.x-playerPos.x,L.z-playerPos.z)<45)dot(L.x,L.z,L.kind==='w'?'#4ade80':(L.kind==='armor'?'#60a5fa':'#f87171'),3);});
+  // araç
+  if(car&&car.alive)dot(car.x,car.z,'#fbbf24',5);
+  // oyuncu oku
+  var px=(playerPos.x+W/2)/W*S,py=(playerPos.z+W/2)/W*S;
+  g.save();g.translate(px,py);g.rotate(-state.yaw+Math.PI);g.fillStyle='#fde047';
+  g.beginPath();g.moveTo(0,-8);g.lineTo(5,6);g.lineTo(-5,6);g.closePath();g.fill();g.restore();
+}
+
+// ---------- etkileşim ----------
+function toggleCrouch(){ if(state.driving)return; state.crouch=!state.crouch; log(state.crouch?'eğildin 🦆':'kalktın'); tone(state.crouch?300:500,0.07,'square',0.05); }
+function doJump(){ if(state.driving||player.grp.position.y>0.05)return; vy=5.6; tone(500,0.08,'square',0.04,200); }
+function toggleCar(){
+  if(!state.playing||state.over||!car||!car.alive)return;
+  if(!state.driving){
+    if(Math.hypot(car.x-playerPos.x,car.z-playerPos.z)>5){log('araca yaklaş!');return;}
+    state.driving=true;player.grp.visible=false;carYaw=state.yaw;
+    speedo.style.display='block';log('sürüyorsun 🚙 — ez geç!');startEngine();
+  }else{ state.driving=false;player.grp.visible=true;carSpeed=0;speedo.style.display='none';
+    playerPos.x=car.x+3;playerPos.z=car.z+2;stopEngine();log('araçtan indin'); }
+  if(state.scoped){state.scoped=false;crossEl.textContent='◎';}
+}
+function startEngine(){
+  if(!ac()||engineOsc)return;try{
+    engineOsc=AC.createOscillator();engineGain=AC.createGain();
+    engineOsc.type='sawtooth';engineOsc.frequency.value=60;engineGain.gain.value=0.04;
+    engineOsc.connect(engineGain);engineGain.connect(AC.destination);engineOsc.start();
+  }catch(e){}
+}
+function stopEngine(){ try{if(engineOsc){engineOsc.stop();engineOsc=null;engineGain=null;}}catch(e){engineOsc=null;} }
+function pickupLoot(L){
+  if(L.taken)return;L.taken=true;L.mesh.visible=false;
+  if(L.kind==='med'){ state.meds=Math.min(3,state.meds+1);medsEl.textContent=state.meds;
+    tone(880,0.1,'sine',0.07);log('💊 kit aldın ('+state.meds+') — H / KİT ile bas');addFeed('💊 Kit bulundu');return; }
+  if(L.kind==='armor'){
+    if(L.armorLvl>state.armor){ state.armor=L.armorLvl; state.armorName='Sv'+L.armorLvl; armorEl.textContent=state.armorName; }
+    tone(500,0.12,'square',0.07);setTimeout(function(){tone(750,0.12,'square',0.07);},100);
+    log('🦺 Seviye '+L.armorLvl+' yelek kuşandın!');addFeed('🦺 Sv'+L.armorLvl+' yelek');return; }
+  if(L.kind==='drop'){
+    inv[0]={w:4,ammo:WEAPONS[4].mag};inv[1]={w:2,ammo:WEAPONS[2].mag};state.slot=1;
+    if(3>state.armor){state.armor=3;state.armorName='Sv3';armorEl.textContent='Sv3';}
+    state.meds=3;medsEl.textContent='3';
+    refreshAmmo();updateGunMesh();
+    tone(880,0.12,'square',0.08);setTimeout(function(){tone(1174,0.15,'square',0.08);},120);
+    log('📦 DROP: KAR98 + AWM + Sv3 + 3 kit!');addFeed('📦 Drop yağmalandı!');
+    // dumanı söndür
+    return; }
+  var got=WEAPONS[L.w].name;
+  if(inv[0].w<0){inv[0]={w:L.w,ammo:WEAPONS[L.w].mag};}
+  else if(inv[1].w<0){inv[1]={w:L.w,ammo:WEAPONS[L.w].mag};state.slot=1;}
+  else{inv[state.slot]={w:L.w,ammo:WEAPONS[L.w].mag};}
+  refreshAmmo();updateGunMesh();tone(880,0.1,'square',0.07);setTimeout(function(){tone(1320,0.12,'square',0.07);},90);
+  log(got+' aldın!');addFeed('🔫 '+got+' bulundu');
+}
+
+// ---------- ateş ----------
+function tryShoot(){
+  if(!state.playing||state.over||state.driving)return;
+  var c=curW();if(!c)return;
+  if(reloadT>0||shootCd>0)return;
+  var s=inv[state.slot];
+  if(s.ammo<=0){startReload();return;}
+  s.ammo--;ammoEl.textContent=s.ammo;shootCd=c.cd;c.snd();
+  if(flash){flash.intensity=2.2;flash.position.set(playerPos.x,2.2,playerPos.z);setTimeout(function(){flash.intensity=0;},60);}
+  hitmark.style.display='block';setTimeout(function(){hitmark.style.display='none';},90);
+  // mermi izi
+  if(hasThree()){var T=window.THREE;
+    var from=new T.Vector3(playerPos.x,1.5,playerPos.z);
+    var dir=new T.Vector3(-Math.sin(state.yaw),state.pitch*0.6,-Math.cos(state.yaw)).normalize();
+    var geo=new T.BufferGeometry().setFromPoints([from,from.clone().add(dir.multiplyScalar(30))]);
+    var line=new T.Line(geo,new T.LineBasicMaterial({color:0xffe27a,transparent:true,opacity:0.9}));
+    scene.add(line);tracers.push({m:line,life:0.08});
+  }
+  var spread=state.crouch?0.965:0.94;
+  if(state.scoped&&c.scope)spread=0.986;
+  if(c.falloff)spread=0.90; // pompalı: geniş saçılım, yakın affetmez
+  var fx=-Math.sin(state.yaw),fz=-Math.cos(state.yaw),best=null,bd=70;
+  for(var i=0;i<bots.length;i++){var b=bots[i];if(!b.alive)continue;
+    var dx=b.mesh.position.x-playerPos.x,dz=b.mesh.position.z-playerPos.z;
+    var d=Math.hypot(dx,dz);if(d>70||d<1)continue;
+    var dot=(dx*fx+dz*fz)/(d||1);
+    if(dot>spread&&d<bd){bd=d;best=b;}
+  }
+  if(best){
+    var dmg=c.dmg;
+    if(c.falloff){ dmg = bd<8?95:(bd<15?48:(bd<25?24:10)); } // SPAS mesafe falloff
+    if(state.scoped&&c.scope)dmg*=1.15;
+    dmg*=state.crouch?1.1:1;
+    best.hp-=dmg;tone(150,0.12,'sawtooth',0.08);
+    best.mesh.userData.flashT=0.12;best.pop=0.18;
+    // vuruş efekti (kırmızı puff)
+    if(hasThree()){var T2=window.THREE;
+      var puff=new T2.Mesh(new T2.SphereGeometry(0.45,8,8),new T2.MeshBasicMaterial({color:0xef4444,transparent:true,opacity:0.8}));
+      puff.position.set(best.mesh.position.x,1.6,best.mesh.position.z);scene.add(puff);
+      tracers.push({m:puff,life:0.25,puff:true});
+    }
+    if(best.hp<=0&&best.alive){best.alive=false;best.mesh.visible=false;state.kills++;killsEl.textContent=state.kills;state.alive--;aliveEl.textContent=state.alive;
+      addFeed('☠ '+best.name+' vuruldu! ('+state.kills+' kill)');tone(90,0.3,'sawtooth',0.1);checkWin();}
+    else addFeed('💥 '+best.name+' vuruldu!');
+  }
+  if(c.auto&&(firing||mouseFire))setTimeout(function(){if((firing||mouseFire)&&(state.playing))tryShoot();},c.cd*1000);
+}
+
+function damage(n,from){
+  if(state.over||!state.playing)return;
+  if(state.driving&&car&&car.alive){car.hp-=n*1.5;if(car.hp<=0){car.hp=0;car.alive=false;car.mesh.visible=false;toggleCar();addFeed('💥 UAZ patladı!');noiseShot(0.5,500,0.4);}return;}
+  if(state.crouch)n*=0.8;
+  if(state.armor>=3)n*=0.55;else if(state.armor>=2)n*=0.7;
+  state.hp-=n;if(state.hp<0)state.hp=0;
+  hpEl.textContent=Math.ceil(state.hp);hpfill.style.width=state.hp+'%';
+  hpfill.style.background=state.hp>50?'':'#ef4444';
+  hurtFlash();tone(180,0.15,'sawtooth',0.08,-80);
+  if(state.hp<=0)gameOver(false,from);
+}
+function checkWin(){if(state.alive<=1&&!state.over)gameOver(true);}
+function gameOver(win,from){
+  state.over=true;state.playing=false;stopEngine();
+  over.style.display='flex';
+  document.getElementById('overTitle').textContent=win?'#1 OLDUN! 🏆':'ÖLDÜN 💀';
+  document.getElementById('overText').textContent=win?state.kills+' kill ile Erangel-Mini şampiyonu oldun!':(from||'Alan')+' seni vurdu. Kill: '+state.kills+' — tekrar dene!';
+  if(win){[523,659,784,1046].forEach(function(f,i){setTimeout(function(){tone(f,0.2,'square',0.08);},i*160);});}
+}
+
+// ---------- bot AI ----------
+function botUpdate(dt){
+  var T=window.THREE;
+  for(var i=0;i<bots.length;i++){var b=bots[i];if(!b.alive)continue;
+    b.t-=dt;
+    var bp=b.mesh.position;
+    var dx=playerPos.x-bp.x,dz=playerPos.z-bp.z,distP=Math.hypot(dx,dz);
+    if(b.t<=0){
+      b.t=2+Math.random()*3;
+      if(distP<26&&state.playing&&!state.driving&&!state.over){b.dir=Math.atan2(dx,dz)+rnd(-0.5,0.5);}
+      else{b.dir=Math.atan2(zoneX-bp.x,zoneZ-bp.z)+rnd(-1,1);}
+    }
+    var spd=b.hasRifle?4.2:3.4;
+    if(distP<8&&state.playing&&!state.over){ spd=-2.5; } // çok yakınsa geri çekil, üst üste binme
+    // botlar arası itiş (yığılmayı önler)
+    var pushX=0,pushZ=0;
+    for(var q=0;q<bots.length;q++){ if(q===i)continue; var ob=bots[q]; if(!ob.alive)continue;
+      var ox=bp.x-ob.mesh.position.x, oz=bp.z-ob.mesh.position.z, od=Math.hypot(ox,oz);
+      if(od<3&&od>0.01){ pushX+=ox/od*dt*6; pushZ+=oz/od*dt*6; }
+    }
+    var nx=bp.x+Math.sin(b.dir)*dt*spd+pushX,nz=bp.z+Math.cos(b.dir)*dt*spd+pushZ;
+    if(Math.hypot(nx-zoneX,nz-zoneZ)<zoneR+5&&!collide(nx,nz,0.6)){bp.x=nx;bp.z=nz;}else b.dir+=1.8;
+    b.mesh.rotation.y=b.dir;
+    // yürüme animi + vuruş pop
+    b.phase+=dt*8;var u=b.mesh.userData;
+    if(u.legL){u.legL.rotation.x=Math.sin(b.phase)*0.55;u.legR.rotation.x=-Math.sin(b.phase)*0.55;}
+    if(typeof b.pop==='number'&&b.pop>0){b.pop=Math.max(0,b.pop-dt);var ps=1+b.pop*1.4;b.mesh.scale.set(ps,ps,ps);}else b.mesh.scale.set(1,1,1);
+    if(u.flashT>0){u.flashT-=dt;}
+    // ateş
+    b.shootCd-=dt;
+    if(b.shootCd<=0&&distP<26&&distP>3&&state.playing&&!state.over){
+      b.shootCd=2.2+Math.random()*2.5;
+      if(Math.random()<0.30){noiseShot(0.1,900,0.10);damage(rnd(4,9)*(b.hasRifle?1.2:1),b.name);}
+    }
+    // bot vs bot (yakınlarsa)
+    for(var j=i+1;j<bots.length;j++){var o=bots[j];if(!o.alive)continue;
+      if(Math.hypot(bp.x-o.mesh.position.x,bp.z-o.mesh.position.z)<6&&Math.random()<dt*0.5){
+        o.hp-=20;if(o.hp<=0){o.alive=false;o.mesh.visible=false;state.alive--;aliveEl.textContent=state.alive;addFeed('👥 '+b.name+' → '+o.name);checkWin();}
+      }
+    }
+  }
+  if(state.playing&&Math.random()<dt*0.05&&state.alive>2){
+    var ab=bots.filter(function(b){return b.alive;});
+    if(ab.length>1){var v=ab[Math.floor(Math.random()*ab.length)];v.alive=false;v.mesh.visible=false;state.alive--;aliveEl.textContent=state.alive;addFeed('👥 '+v.name+' elendi');checkWin();}
+  }
+}
+
+// ---------- loop ----------
+var last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  var dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(!hasThree()||!scene)return;
+  shootCd=Math.max(0,shootCd-dt);
+  if(reloadT>0){reloadT-=dt;if(reloadT<=0){var c=curW();if(c){inv[state.slot].ammo=c.mag;refreshAmmo();log('şarjör doldu');tone(900,0.08,'square',0.06);}}}
+  // kit ile iyileşme (2.5 sn'de +60)
+  if(state.healT>0&&state.playing&&!state.over){
+    state.healT-=dt;state.hp=Math.min(100,state.hp+24*dt);
+    hpEl.textContent=Math.ceil(state.hp);hpfill.style.width=state.hp+'%';
+    if(state.healT<=0){hpfill.style.background=state.hp>50?'':'#ef4444';log('tamamdır, +60 can 💪');tone(990,0.15,'sine',0.07);}
+  }
+  // stamina
+  var wantRun=(keys['ShiftLeft']||keys['ShiftRight']||(joy.active&&joy.mag>0.92))&&!state.crouch;
+  if(wantRun&&(keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']||joy.active)&&state.stam>1&&!state.driving){state.stam=Math.max(0,state.stam-dt*16);}
+  else{state.stam=Math.min(100,state.stam+dt*12);}
+  stfill.style.width=state.stam+'%';
+
+  if(state.driving&&car){
+    // ---- araç fiziği ----
+    var th=0,st=0;
+    if(keys['KeyW']||keys['ArrowUp'])th+=1;if(keys['KeyS']||keys['ArrowDown'])th-=0.6;
+    if(joy.active)th+=-joy.y;
+    if(keys['KeyA']||keys['ArrowLeft'])st-=1;if(keys['KeyD']||keys['ArrowRight'])st+=1;
+    if(joy.active)st+=joy.x;
+    th=Math.max(-0.6,Math.min(1,th));
+    carSpeed+= (th*18-carSpeed)*Math.min(1,dt*2.2);
+    if(Math.abs(carSpeed)>0.5)carYaw+=st*dt*1.4*Math.sign(carSpeed);
+    carYaw+=(state.yaw-carYaw)*0; // direksiyon bağımsız
+    var cvx=car.x-Math.sin(carYaw)*carSpeed*dt, cvz=car.z-Math.cos(carYaw)*carSpeed*dt;
+    if(!collide(cvx,cvz,1.6)){car.x=cvx;car.z=cvz;}else{carSpeed*=0.3;if(Math.abs(carSpeed)>6)damage(4,'Kaza');}
+    car.x=Math.max(-HALF,Math.min(HALF,car.x));car.z=Math.max(-HALF,Math.min(HALF,car.z));
+    car.mesh.position.set(car.x,0,car.z);car.mesh.rotation.y=carYaw+Math.PI;
+    car.wheels.forEach(function(w){w.rotation.x+=carSpeed*dt*2;});
+    playerPos.x=car.x;playerPos.z=car.z;state.yaw=carYaw;
+    if(engineOsc)engineOsc.frequency.value=50+Math.abs(carSpeed)*5;
+    speedo.textContent=Math.round(Math.abs(carSpeed)*3.6)+' km/h • UAZ '+Math.max(0,Math.ceil(car.hp));
+    // ezme
+    for(var e=0;e<bots.length;e++){var eb=bots[e];if(!eb.alive)continue;
+      if(Math.hypot(eb.mesh.position.x-car.x,eb.mesh.position.z-car.z)<2.4&&Math.abs(carSpeed)>4){
+        eb.alive=false;eb.mesh.visible=false;state.kills++;killsEl.textContent=state.kills;state.alive--;aliveEl.textContent=state.alive;
+        addFeed('🚙 '+eb.name+' ezildi!');noiseShot(0.2,400,0.3);checkWin();
+      }
+    }
+    if(Math.hypot(car.x-zoneX,car.z-zoneZ)>zoneR)damage(dt*zoneDmg,'Alan');
+    camera.position.set(car.x+Math.sin(carYaw)*10,6.5,car.z+Math.cos(carYaw)*10);
+    camera.lookAt(car.x,1.5,car.z);
+  } else {
+    // ---- yaya hareket ----
+    var sp=(state.crouch?3.2:((wantRun&&state.stam>1)?9.5:6))*dt,mx=0,mz=0;
+    if(keys['KeyW']||keys['ArrowUp'])mz-=sp;if(keys['KeyS']||keys['ArrowDown'])mz+=sp;
+    if(keys['KeyA']||keys['ArrowLeft'])mx-=sp;if(keys['KeyD']||keys['ArrowRight'])mx+=sp;
+    if(joy.active){mx+=joy.x*sp*1.5;mz+=joy.y*sp*1.5;}
+    if(state.playing&&!state.over&&(mx||mz)){
+      var c=Math.cos(state.yaw),s=Math.sin(state.yaw);
+      var wx=mx*c-mz*s,wz=mx*s+mz*c;
+      var nx=playerPos.x+wx,nz=playerPos.z+wz;
+      if(!collide(nx,playerPos.z))playerPos.x=nx;
+      if(!collide(playerPos.x,nz))playerPos.z=nz;
+      playerPos.x=Math.max(-HALF,Math.min(HALF,playerPos.x));
+      playerPos.z=Math.max(-HALF,Math.min(HALF,playerPos.z));
+      walkCycle+=dt*(wantRun?13:9);
+    }
+    if(keys['Space'])doJump();
+    vy-=14*dt;player.grp.position.y=Math.max(0,player.grp.position.y+vy*dt);
+    player.grp.position.x=playerPos.x;player.grp.position.z=playerPos.z;
+    player.grp.rotation.y=state.yaw+Math.PI;
+    var pu=player.grp.userData;
+    var swing=(mx||mz)?Math.sin(walkCycle)*0.6:0;
+    pu.legL.rotation.x=swing;pu.legR.rotation.x=-swing;
+    pu.armL.rotation.x=-swing*0.7;pu.armR.rotation.x=swing*0.7;
+    var targetH=state.crouch?0.72:1;
+    player.grp.scale.y+=(targetH-player.grp.scale.y)*Math.min(1,dt*8);
+    var cd=7,ch=state.crouch?3.0:4.4;
+    camera.position.set(playerPos.x+Math.sin(state.yaw)*cd,ch+player.grp.position.y-state.pitch*9,playerPos.z+Math.cos(state.yaw)*cd);
+    camera.lookAt(playerPos.x,1.7,playerPos.z-2);
+    if(state.playing&&!state.over&&Math.hypot(playerPos.x-zoneX,playerPos.z-zoneZ)>zoneR)damage(dt*zoneDmg,'Alan');
+  }
+  // loot / araç yakınlık
+  nearLoot=null;nearCar=false;
+  if(state.playing&&!state.over&&!state.driving){
+    var nl=null,nd=3.2;
+    for(var li=0;li<loots.length;li++){var L=loots[li];if(L.taken)continue;
+      var d=Math.hypot(L.x-playerPos.x,L.z-playerPos.z);if(d<nd){nd=d;nl=L;}}
+    nearLoot=nl;
+    if(car&&car.alive&&Math.hypot(car.x-playerPos.x,car.z-playerPos.z)<5)nearCar=true;
+    if(nearLoot){btnAct.textContent='🔫 '+WEAPONS[nearLoot.w].name+' AL';btnAct.classList.add('show');}
+    else if(nearCar){btnAct.textContent='🚙 BİN';btnAct.classList.add('show');}
+    else btnAct.classList.remove('show');
+  } else btnAct.classList.remove('show');
+  // loot anim
+  for(var a=0;a<loots.length;a++){var Lo=loots[a];if(Lo.taken)continue;Lo.phase+=dt*2;Lo.mesh.position.y=0.2+Math.sin(Lo.phase)*0.12;Lo.mesh.rotation.y+=dt*0.8;}
+  // bulutlar
+  for(var cl2=0;cl2<clouds.length;cl2++){clouds[cl2].position.x+=dt*1.2;if(clouds[cl2].position.x>240)clouds[cl2].position.x=-240;}
+  // alan
+  if(state.playing&&!state.over){
+    zoneT-=dt;
+    if(zoneT<=0){
+      zonePhase++;
+      zoneR=Math.max(10,zoneR*(zonePhase<4?0.68:0.6));zoneX*=0.6;zoneZ*=0.6;
+      zoneT=zonePhase<3?22:16;zoneDmg=1+zonePhase*1.5;
+      zoneMesh.geometry.dispose();zoneMesh.geometry=new window.THREE.RingGeometry(zoneR-1.5,zoneR,72);
+      safeMesh.geometry.dispose();safeMesh.geometry=new window.THREE.CircleGeometry(zoneR,72);
+      addFeed('🛡 Alan daraldı! Faz '+zonePhase);tone(440,0.2,'square',0.08);setTimeout(function(){tone(330,0.25,'square',0.08);},200);
+    }
+    var mmT=Math.floor(zoneT/60),ss=Math.floor(zoneT%60);
+    zoneEl.textContent=mmT+':'+(ss<10?'0':'')+ss;phaseEl.textContent='P'+zonePhase;
+  }
+  zoneMesh.position.x=zoneX;zoneMesh.position.z=zoneZ;
+  safeMesh.position.x=zoneX;safeMesh.position.z=zoneZ;
+  botUpdate(dt);
+  // mermi izleri
+  for(var ti=tracers.length-1;ti>=0;ti--){tracers[ti].life-=dt;
+    if(tracers[ti].puff){tracers[ti].m.scale.multiplyScalar(1+dt*8);tracers[ti].m.material.opacity=Math.max(0,tracers[ti].life*3);}
+    if(tracers[ti].life<=0){scene.remove(tracers[ti].m);tracers.splice(ti,1);}}
+  drawMinimap();
+  renderer.render(scene,camera);
+}
+
+// ---- 2D fallback ----
+var fallbackCvs=null;
+function fallbackPaint(){
+  if(scene)return;
+  if(!fallbackCvs){fallbackCvs=document.createElement('canvas');fallbackCvs.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:3;pointer-events:none';document.body.appendChild(fallbackCvs);}
+  var ctx=fallbackCvs.getContext('2d');
+  var w=fallbackCvs.width=innerWidth,h=fallbackCvs.height=innerHeight;
+  var g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#87b5d6');g.addColorStop(1,'#4a7c59');
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='bold 20px system-ui';
+  ctx.fillText('SAVAŞ ALANI MINI V2 — 3D yükleniyor…',20,60);
+  log('3D kütüphanesi yüklenemedi — çevrimiçi olunca 3D açılır');
+}
+if(hasThree()){try{init3D();if(fallbackCvs)fallbackCvs.remove();requestAnimationFrame(loop);}catch(e){log('3D hatası: '+e.message);fallbackPaint();}}
+else{fallbackPaint();setTimeout(function(){if(hasThree()){try{init3D();if(fallbackCvs)fallbackCvs.remove();requestAnimationFrame(loop);}catch(e){}}else fallbackPaint();},2500);}
+setInterval(function(){if(!hasThree()||!scene)fallbackPaint();},3000);
+})();
+</script>
+</body>
+</html>
